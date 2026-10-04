@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SocietyOS - Residential Society Management Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+  <!-- Header / Navbar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-aqua-gradient flex items-center justify-center text-white font-black text-xl shadow-md shadow-cyan-200">
+          S
+        </div>
+        <div>
+          <span class="font-extrabold text-xl text-slate-900 tracking-tight">SocietyOS</span>
+          <span class="text-xs bg-cyan-100 text-cyan-800 font-bold px-2 py-0.5 rounded-full ml-2">SaaS 2.0</span>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4" id="header-auth-actions">
+        <a href="login.html" class="btn-aqua-outline text-sm">Sign In</a>
+        <a href="register.html" class="btn-aqua text-sm">Register Resident</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="max-w-7xl mx-auto px-6 py-16 flex-1 flex flex-col justify-center">
+    <div class="text-center max-w-3xl mx-auto space-y-6">
+      <span class="px-4 py-1.5 rounded-full bg-cyan-100 text-cyan-800 font-bold text-xs uppercase tracking-wider">
+        Complete Multi-Block Society Management
+      </span>
+      <h1 class="text-4xl sm:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
+        Modern, Seamless Society Administration
+      </h1>
+      <p class="text-lg text-slate-600 leading-relaxed font-normal">
+        Empower Main Secretaries, Block Secretaries, and Residents with real-time maintenance billing, instant online payments, complaint resolution, and block-level announcements.
+      </p>
+
+      <div class="pt-4 flex flex-wrap items-center justify-center gap-4">
+        <a href="login.html" id="hero-portal-btn" class="btn-aqua text-base px-8 py-3.5 flex items-center">
+          Access Portal <i class="lucide-arrow-right ml-2 text-lg"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick Role Feature Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+      <div class="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm card-hover">
+        <div class="w-12 h-12 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold text-2xl mb-4">
+          <i class="lucide-shield-check"></i>
+        </div>
+        <h3 class="font-extrabold text-xl text-slate-900 mb-2">Main Secretary</h3>
+        <p class="text-sm text-slate-500 leading-relaxed">Full control over Blocks A–Z, Secretary assignment, monthly maintenance bill creation, collection analytics, reports, and activity audit logs.</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm card-hover">
+        <div class="w-12 h-12 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold text-2xl mb-4">
+          <i class="lucide-building-2"></i>
+        </div>
+        <h3 class="font-extrabold text-xl text-slate-900 mb-2">Block Secretary</h3>
+        <p class="text-sm text-slate-500 leading-relaxed">Strictly manages their assigned block. Forwards society notices, resolves block complaints, tracks block maintenance payments, and notifies residents.</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm card-hover">
+        <div class="w-12 h-12 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold text-2xl mb-4">
+          <i class="lucide-user-check"></i>
+        </div>
+        <h3 class="font-extrabold text-xl text-slate-900 mb-2">Resident Member</h3>
+        <p class="text-sm text-slate-500 leading-relaxed">View flat information, pay monthly maintenance bills via online gateway, download PDF receipts, submit category-based complaints, and receive instant notifications.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-6">
+      © 2026 SocietyOS. White & Aqua SaaS Management Portal.
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    lucide.createIcons();
+    // Persistent session check
+    if (api.getToken() && api.getUser()) {
+      const user = api.getUser();
+      const actions = document.getElementById('header-auth-actions');
+      const btn = document.getElementById('hero-portal-btn');
+
+      if (actions) {
+        actions.innerHTML = `
+          <button onclick="auth.redirectToDashboard('${user.role}')" class="btn-aqua text-sm font-bold">Go to My Dashboard (${user.role.toUpperCase()})</button>
+          <button onclick="auth.logout()" class="btn-aqua-outline text-sm">Log Out</button>
+        `;
+      }
+      if (btn) {
+        btn.innerText = `Go to Dashboard (${user.role.toUpperCase()})`;
+        btn.onclick = (e) => { e.preventDefault(); auth.redirectToDashboard(user.role); };
+      }
+    }
+  </script>
+</body>
+</html>

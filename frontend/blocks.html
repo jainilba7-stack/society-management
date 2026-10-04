@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blocks Management - SocietyOS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex">
+
+  <div id="sidebar-container"></div>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <div id="navbar-container"></div>
+
+    <main class="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-900">Society Blocks (A–M)</h2>
+          <p class="text-xs text-slate-500">Manage residential blocks, assigned secretaries, and payment statistics.</p>
+        </div>
+        <div id="create-block-btn-wrapper">
+          <button onclick="document.getElementById('create-block-modal').classList.remove('hidden')" class="btn-aqua text-xs py-2.5 px-4 flex items-center">
+            <i class="lucide-plus-circle text-sm mr-1.5"></i> Add New Block
+          </button>
+        </div>
+      </div>
+
+      <!-- Blocks Grid -->
+      <div id="blocks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="col-span-full text-center py-12 text-slate-400">Loading blocks...</div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Block Modal -->
+  <div id="create-block-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md modal-content space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+        <h3 class="font-extrabold text-slate-900 text-lg">Create New Block</h3>
+        <button onclick="document.getElementById('create-block-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="lucide-x text-lg"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Block Name</label>
+        <input type="text" id="block-name-input" placeholder="e.g. Block N" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-cyan-500">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Total Flats Capacity</label>
+        <input type="number" id="block-flats-input" value="40" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-cyan-500">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Description</label>
+        <textarea id="block-desc-input" rows="2" placeholder="Block description..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-cyan-500"></textarea>
+      </div>
+      <div class="flex justify-end space-x-3 pt-2">
+        <button onclick="document.getElementById('create-block-modal').classList.add('hidden')" class="btn-aqua-outline text-xs">Cancel</button>
+        <button onclick="blocksModule.createBlock()" class="btn-aqua text-xs">Create Block</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assign Secretary Modal -->
+  <div id="assign-secretary-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md modal-content space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+        <h3 id="assign-block-title" class="font-extrabold text-slate-900 text-lg">Assign Block Secretary</h3>
+        <button onclick="document.getElementById('assign-secretary-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="lucide-x text-lg"></i></button>
+      </div>
+      <input type="hidden" id="assign-block-id">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5">Select User to Assign as Secretary</label>
+        <select id="assign-user-select" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-cyan-500">
+          <option>Loading users...</option>
+        </select>
+      </div>
+      <div class="flex justify-end space-x-3 pt-2">
+        <button onclick="document.getElementById('assign-secretary-modal').classList.add('hidden')" class="btn-aqua-outline text-xs">Cancel</button>
+        <button onclick="blocksModule.submitAssignSecretary()" class="btn-aqua text-xs">Assign Secretary</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/blocks.js"></script>
+  <script>
+    lucide.createIcons();
+    const user = auth.checkAuth(['admin', 'secretary', 'resident']);
+    if (user) {
+      if (user.role !== 'admin') {
+        const btn = document.getElementById('create-block-btn-wrapper');
+        if (btn) btn.style.display = 'none';
+      }
+      ui.initLayout('blocks.html');
+      blocksModule.init();
+    }
+  </script>
+</body>
+</html>

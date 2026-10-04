@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Logs - SocietyOS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex">
+
+  <div id="sidebar-container"></div>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <div id="navbar-container"></div>
+
+    <main class="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900">Activity & Audit Trail</h2>
+        <p class="text-xs text-slate-500">Real-time log of administrative and resident actions (Section 28).</p>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+        <div id="activity-logs-list" class="space-y-3">
+          <div class="p-8 text-center text-slate-400 text-sm">Loading activity logs...</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/activity.js"></script>
+  <script>
+    lucide.createIcons();
+    const user = auth.checkAuth(['admin']);
+    if (user) {
+      ui.initLayout('activity-logs.html');
+      activityModule.init();
+    }
+  </script>
+</body>
+</html>

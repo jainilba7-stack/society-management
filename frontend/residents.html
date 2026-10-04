@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Residents Directory - SocietyOS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex">
+
+  <div id="sidebar-container"></div>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <div id="navbar-container"></div>
+
+    <main class="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-900">Society Residents</h2>
+          <p class="text-xs text-slate-500">Directory of registered residents and secretaries.</p>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap gap-3 items-center">
+        <input type="text" id="filter-block" onkeyup="residentsModule.loadResidents()" placeholder="Filter by Block (e.g. A)" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none">
+
+        <input type="text" id="search-resident" onkeyup="residentsModule.loadResidents()" placeholder="Search resident name, email, flat or phone..." class="px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none flex-1 min-w-[200px]">
+      </div>
+
+      <!-- Table -->
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50/80 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <th class="px-6 py-4">Resident</th>
+                <th class="px-6 py-4">Block</th>
+                <th class="px-6 py-4">Flat Number</th>
+                <th class="px-6 py-4">Phone</th>
+                <th class="px-6 py-4">Role</th>
+                <th class="px-6 py-4">Status</th>
+                <th class="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="residents-table-body">
+              <tr><td colspan="7" class="p-8 text-center text-slate-400 text-sm">Loading residents...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Edit Resident Modal -->
+  <div id="edit-res-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md modal-content space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+        <h3 class="font-extrabold text-slate-900 text-lg">Manage <span id="edit-res-name"></span></h3>
+        <button onclick="document.getElementById('edit-res-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="lucide-x text-lg"></i></button>
+      </div>
+      <input type="hidden" id="edit-res-id">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Phone</label>
+        <input type="text" id="edit-res-phone" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Role</label>
+        <select id="edit-res-role" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+          <option value="resident">Resident</option>
+          <option value="secretary">Block Secretary</option>
+          <option value="admin">Main Admin</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Account Status</label>
+        <select id="edit-res-status" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive / Deactivated</option>
+        </select>
+      </div>
+      <div class="flex justify-end space-x-3 pt-2">
+        <button onclick="document.getElementById('edit-res-modal').classList.add('hidden')" class="btn-aqua-outline text-xs">Cancel</button>
+        <button onclick="residentsModule.submitEditResident()" class="btn-aqua text-xs">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/residents.js"></script>
+  <script>
+    lucide.createIcons();
+    const user = auth.checkAuth(['admin', 'secretary', 'resident']);
+    if (user) {
+      ui.initLayout('residents.html');
+      residentsModule.init();
+    }
+  </script>
+</body>
+</html>

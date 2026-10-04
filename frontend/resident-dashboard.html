@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resident Portal - SocietyOS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Razorpay SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex">
+
+  <div id="sidebar-container"></div>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <div id="navbar-container"></div>
+
+    <main class="p-6 md:p-8 space-y-8 max-w-7xl mx-auto w-full">
+      <!-- Welcome Header -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <span class="text-xs font-extrabold text-cyan-600 uppercase tracking-wider bg-cyan-50 px-3 py-1 rounded-full">Resident Portal</span>
+          <h2 id="res-welcome" class="text-2xl font-extrabold text-slate-900 mt-1">Welcome, Resident 👋</h2>
+          <p class="text-xs sm:text-sm text-slate-500">
+            Block: <strong id="res-block-name" class="text-slate-800">A</strong> | Flat: <strong id="res-flat-number" class="text-slate-800">A-101</strong>
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <a href="complaints.html" class="btn-aqua-outline text-xs py-2.5 px-4 flex items-center">
+            <i class="lucide-alert-circle text-sm mr-1.5"></i> File Complaint
+          </a>
+        </div>
+      </div>
+
+      <!-- Current Maintenance Bill Card (Section 15) -->
+      <div id="res-bill-card" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-extrabold text-slate-900 text-lg">Current Maintenance Bill</h3>
+          <span id="res-bill-status"></span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-5 rounded-2xl">
+          <div>
+            <p class="text-xs font-semibold text-slate-400">Bill Month</p>
+            <p id="res-bill-month" class="text-lg font-bold text-slate-800">October 2026</p>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-slate-400">Amount Due</p>
+            <p id="res-bill-amount" class="text-xl font-extrabold text-slate-900">₹2,500</p>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-slate-400">Due Date</p>
+            <p id="res-bill-duedate" class="text-sm font-bold text-slate-800">10 Oct 2026</p>
+          </div>
+        </div>
+
+        <div id="res-bill-action" class="pt-2 flex justify-end">
+          <!-- Dynamically populated [ Pay Now ] or Download Receipt -->
+        </div>
+      </div>
+
+      <!-- Section Grids -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Announcements -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-extrabold text-slate-900 text-base">Announcements</h3>
+            <a href="announcements.html" class="text-xs text-cyan-600 font-bold hover:underline">View Board</a>
+          </div>
+          <div id="res-announcements-list" class="space-y-3"></div>
+        </div>
+
+        <!-- My Complaints -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-extrabold text-slate-900 text-base">My Complaints</h3>
+            <a href="complaints.html" class="text-xs text-cyan-600 font-bold hover:underline">File New</a>
+          </div>
+          <div id="res-complaints-list" class="space-y-3"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/maintenance.js"></script>
+  <script>
+    lucide.createIcons();
+    const user = auth.checkAuth(['resident']);
+
+    if (user) {
+      document.getElementById('res-welcome').innerText = `Welcome, ${user.fullName}`;
+      document.getElementById('res-block-name').innerText = user.blockName || 'Assigned Block';
+      document.getElementById('res-flat-number').innerText = user.flatNumber || 'My Flat';
+
+      ui.initLayout('resident-dashboard.html');
+      loadResidentData();
+    }
+
+    async function loadResidentData() {
+      try {
+        // Load Payments
+        const pData = await api.get('/maintenance/payments');
+        if (pData.success && pData.payments.length > 0) {
+          const currentP = pData.payments[0];
+          document.getElementById('res-bill-month').innerText = currentP.bill ? `${currentP.bill.month} ${currentP.bill.year}` : 'October 2026';
+          document.getElementById('res-bill-amount').innerText = ui.formatCurrency(currentP.totalPaid);
+          document.getElementById('res-bill-duedate').innerText = currentP.bill ? ui.formatDate(currentP.bill.dueDate) : '10 Oct 2026';
+          document.getElementById('res-bill-status').innerHTML = ui.getStatusBadge(currentP.status);
+
+          const actionDiv = document.getElementById('res-bill-action');
+          if (currentP.status === 'pending') {
+            actionDiv.innerHTML = `
+              <button onclick="maintenanceModule.payOnline('${currentP._id}', ${currentP.totalPaid})" class="btn-aqua text-sm px-6 py-2.5 flex items-center">
+                <i class="lucide-credit-card text-base mr-2"></i> Pay Now Online
+              </button>
+            `;
+          } else {
+            actionDiv.innerHTML = `
+              <button onclick="maintenanceModule.downloadReceipt('${currentP._id}')" class="btn-aqua-outline text-sm px-6 py-2.5 flex items-center">
+                <i class="lucide-download text-base mr-2"></i> Download Paid Receipt
+              </button>
+            `;
+          }
+        }
+
+        // Load Announcements
+        const aData = await api.get('/announcements');
+        if (aData.success) {
+          const list = document.getElementById('res-announcements-list');
+          if (aData.announcements.length === 0) {
+            list.innerHTML = `<div class="text-slate-400 text-xs py-4 text-center">No announcements</div>`;
+          } else {
+            list.innerHTML = aData.announcements.slice(0, 3).map(a => `
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+                <div class="font-bold text-slate-900">${a.title}</div>
+                <p class="text-slate-600 mt-1">${a.description.substring(0, 100)}...</p>
+              </div>
+            `).join('');
+          }
+        }
+
+        // Load Complaints
+        const cData = await api.get('/complaints');
+        if (cData.success) {
+          const list = document.getElementById('res-complaints-list');
+          if (cData.complaints.length === 0) {
+            list.innerHTML = `<div class="text-slate-400 text-xs py-4 text-center">No active complaints</div>`;
+          } else {
+            list.innerHTML = cData.complaints.slice(0, 3).map(c => `
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs flex justify-between items-center">
+                <div>
+                  <div class="font-bold text-slate-900">${c.title}</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">${ui.formatDate(c.createdAt)}</div>
+                </div>
+                <div>${ui.getStatusBadge(c.status)}</div>
+              </div>
+            `).join('');
+          }
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+  </script>
+</body>
+</html>

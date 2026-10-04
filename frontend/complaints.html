@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complaints & Helpdesk - SocietyOS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex">
+
+  <div id="sidebar-container"></div>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <div id="navbar-container"></div>
+
+    <main class="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-900">Complaints & Helpdesk</h2>
+          <p class="text-xs text-slate-500">Track and resolve resident issues by category & status (Section 13).</p>
+        </div>
+        <div>
+          <button onclick="document.getElementById('submit-complaint-modal').classList.remove('hidden')" class="btn-aqua text-xs py-2.5 px-4 flex items-center">
+            <i class="lucide-plus-circle text-sm mr-1.5"></i> Submit New Complaint
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap gap-3 items-center">
+        <select id="filter-category" onchange="complaintsModule.loadComplaints()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none">
+          <option value="">All Categories</option>
+          <option value="Water">Water</option>
+          <option value="Electricity">Electricity</option>
+          <option value="Cleaning">Cleaning</option>
+          <option value="Security">Security</option>
+          <option value="Parking">Parking</option>
+          <option value="Lift">Lift</option>
+          <option value="Maintenance">Maintenance</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <select id="filter-status" onchange="complaintsModule.loadComplaints()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none">
+          <option value="">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Resolved">Resolved</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </div>
+
+      <!-- Complaints List Container -->
+      <div id="complaints-list" class="space-y-4">
+        <div class="p-8 text-center text-slate-400 text-sm">Loading complaints...</div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Submit Complaint Modal (Section 13) -->
+  <div id="submit-complaint-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg modal-content space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+        <h3 class="font-extrabold text-slate-900 text-lg">Submit Complaint</h3>
+        <button onclick="document.getElementById('submit-complaint-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="lucide-x text-lg"></i></button>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Complaint Title</label>
+        <input type="text" id="comp-title" placeholder="e.g. Water leak in main corridor" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Category</label>
+          <select id="comp-category" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+            <option value="Water">Water</option>
+            <option value="Electricity">Electricity</option>
+            <option value="Cleaning">Cleaning</option>
+            <option value="Security">Security</option>
+            <option value="Parking">Parking</option>
+            <option value="Lift">Lift</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Priority</label>
+          <select id="comp-priority" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Description</label>
+        <textarea id="comp-desc" rows="3" placeholder="Provide full details of the issue..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Optional Photo Attachment</label>
+        <input type="file" id="comp-file" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100">
+      </div>
+
+      <div class="flex justify-end space-x-3 pt-2">
+        <button onclick="document.getElementById('submit-complaint-modal').classList.add('hidden')" class="btn-aqua-outline text-xs">Cancel</button>
+        <button onclick="complaintsModule.submitComplaint()" class="btn-aqua text-xs">Submit Ticket</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Complaint Status Modal -->
+  <div id="update-status-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md modal-content space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+        <h3 class="font-extrabold text-slate-900 text-lg">Update Ticket Status</h3>
+        <button onclick="document.getElementById('update-status-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="lucide-x text-lg"></i></button>
+      </div>
+      <input type="hidden" id="update-comp-id">
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Status</label>
+        <select id="update-comp-status" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+          <option value="Pending">Pending</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Resolved">Resolved</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Resolution Note / Remarks</label>
+        <textarea id="update-comp-note" rows="3" placeholder="Action taken or reason..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none"></textarea>
+      </div>
+
+      <div class="flex justify-end space-x-3 pt-2">
+        <button onclick="document.getElementById('update-status-modal').classList.add('hidden')" class="btn-aqua-outline text-xs">Cancel</button>
+        <button onclick="complaintsModule.submitUpdateStatus()" class="btn-aqua text-xs">Update Status</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/complaints.js"></script>
+  <script>
+    lucide.createIcons();
+    const user = auth.checkAuth(['admin', 'secretary', 'resident']);
+    if (user) {
+      ui.initLayout('complaints.html');
+      complaintsModule.init();
+    }
+  </script>
+</body>
+</html>

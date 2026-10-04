@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports & Export Analytics - SocietyOS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex">
+
+  <div id="sidebar-container"></div>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <div id="navbar-container"></div>
+
+    <main class="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-900">Reports & Analytics</h2>
+          <p class="text-xs text-slate-500">Filter monthly collection, pending bills, and block stats (Section 16).</p>
+        </div>
+        <div>
+          <button onclick="reportsModule.exportCSV()" class="btn-aqua text-xs py-2.5 px-4 flex items-center">
+            <i class="lucide-download text-sm mr-1.5"></i> Export Report (CSV)
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap gap-3 items-center">
+        <input type="text" id="report-block" onkeyup="reportsModule.loadReports()" placeholder="Filter by Block (e.g. A)" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none">
+
+        <select id="report-status" onchange="reportsModule.loadReports()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none">
+          <option value="">All Payment Statuses</option>
+          <option value="paid">Paid</option>
+          <option value="pending">Pending</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50/80 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <th class="px-6 py-4">Bill Period</th>
+                <th class="px-6 py-4">Resident</th>
+                <th class="px-6 py-4">Block & Flat</th>
+                <th class="px-6 py-4">Amount</th>
+                <th class="px-6 py-4">Status</th>
+                <th class="px-6 py-4">Txn ID</th>
+                <th class="px-6 py-4">Payment Date</th>
+              </tr>
+            </thead>
+            <tbody id="reports-table-body">
+              <tr><td colspan="7" class="p-8 text-center text-slate-400 text-sm">Loading report dataset...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/reports.js"></script>
+  <script>
+    lucide.createIcons();
+    const user = auth.checkAuth(['admin', 'secretary']);
+    if (user) {
+      ui.initLayout('reports.html');
+      reportsModule.init();
+    }
+  </script>
+</body>
+</html>

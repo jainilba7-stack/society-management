@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Main Secretary Dashboard - SocietyOS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex">
+
+  <!-- Sidebar Container -->
+  <div id="sidebar-container"></div>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <main class="p-6 md:p-8 space-y-8 max-w-7xl mx-auto w-full">
+      <!-- Welcome Banner -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden">
+        <div class="relative z-10 space-y-1">
+          <span class="text-xs font-extrabold text-cyan-600 uppercase tracking-wider bg-cyan-50 px-3 py-1 rounded-full">Society Super Admin</span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Welcome, Main Secretary 👋</h2>
+          <p class="text-xs sm:text-sm text-slate-500 max-w-xl">Society-wide command center for Blocks A–M, financial collections, complaint management, and announcements.</p>
+        </div>
+        <div class="flex flex-wrap gap-2 relative z-10">
+          <a href="maintenance.html" class="btn-aqua text-xs py-2.5 px-4 flex items-center">
+            <i class="lucide-plus-circle text-sm mr-1.5"></i> Create Bill
+          </a>
+          <a href="announcements.html" class="btn-aqua-outline text-xs py-2.5 px-4 flex items-center">
+            <i class="lucide-megaphone text-sm mr-1.5"></i> Post Notice
+          </a>
+        </div>
+      </div>
+
+      <!-- 7 Statistics Cards Grid (Section 2, 15) -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm card-hover text-center">
+          <div class="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 mx-auto flex items-center justify-center font-bold mb-2">
+            <i class="lucide-building-2 text-sm"></i>
+          </div>
+          <p class="text-[11px] font-semibold text-slate-400 uppercase">Blocks</p>
+          <p id="stat-blocks" class="text-xl font-extrabold text-slate-900 mt-0.5">0</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm card-hover text-center">
+          <div class="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 mx-auto flex items-center justify-center font-bold mb-2">
+            <i class="lucide-home text-sm"></i>
+          </div>
+          <p class="text-[11px] font-semibold text-slate-400 uppercase">Flats</p>
+          <p id="stat-flats" class="text-xl font-extrabold text-slate-900 mt-0.5">0</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm card-hover text-center">
+          <div class="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 mx-auto flex items-center justify-center font-bold mb-2">
+            <i class="lucide-users text-sm"></i>
+          </div>
+          <p class="text-[11px] font-semibold text-slate-400 uppercase">Residents</p>
+          <p id="stat-residents" class="text-xl font-extrabold text-slate-900 mt-0.5">0</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm card-hover text-center">
+          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center font-bold mb-2">
+            <i class="lucide-wallet text-sm"></i>
+          </div>
+          <p class="text-[11px] font-semibold text-slate-400 uppercase">Collected</p>
+          <p id="stat-collected" class="text-sm font-extrabold text-emerald-600 mt-1">₹0</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm card-hover text-center">
+          <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 mx-auto flex items-center justify-center font-bold mb-2">
+            <i class="lucide-clock text-sm"></i>
+          </div>
+          <p class="text-[11px] font-semibold text-slate-400 uppercase">Pending</p>
+          <p id="stat-pending" class="text-sm font-extrabold text-amber-600 mt-1">₹0</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm card-hover text-center">
+          <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 mx-auto flex items-center justify-center font-bold mb-2">
+            <i class="lucide-alert-circle text-sm"></i>
+          </div>
+          <p class="text-[11px] font-semibold text-slate-400 uppercase">Complaints</p>
+          <p id="stat-complaints" class="text-xl font-extrabold text-slate-900 mt-0.5">0</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm card-hover text-center col-span-2 sm:col-span-1">
+          <div class="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 mx-auto flex items-center justify-center font-bold mb-2">
+            <i class="lucide-user-check text-sm"></i>
+          </div>
+          <p class="text-[11px] font-semibold text-slate-400 uppercase">Secretaries</p>
+          <p id="stat-secretaries" class="text-xl font-extrabold text-slate-900 mt-0.5">0</p>
+        </div>
+      </div>
+
+      <!-- 4 Dashboard Charts Grid (Section 2, 15) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- 1. Monthly Collection Trend -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <h3 class="font-extrabold text-slate-900 text-base mb-4 flex items-center">
+            <i class="lucide-line-chart text-cyan-600 mr-2"></i> Monthly Maintenance Collection
+          </h3>
+          <canvas id="chart-monthly-collection" height="200"></canvas>
+        </div>
+
+        <!-- 2. Paid vs Pending Ratio -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <h3 class="font-extrabold text-slate-900 text-base mb-4 flex items-center">
+            <i class="lucide-pie-chart text-cyan-600 mr-2"></i> Paid vs Pending Maintenance
+          </h3>
+          <canvas id="chart-paid-vs-pending" height="200"></canvas>
+        </div>
+
+        <!-- 3. Block-wise Payment Collection -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <h3 class="font-extrabold text-slate-900 text-base mb-4 flex items-center">
+            <i class="lucide-bar-chart-3 text-cyan-600 mr-2"></i> Block-wise Payment Collection
+          </h3>
+          <canvas id="chart-block-collection" height="200"></canvas>
+        </div>
+
+        <!-- 4. Complaints by Category -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <h3 class="font-extrabold text-slate-900 text-base mb-4 flex items-center">
+            <i class="lucide-alert-triangle text-cyan-600 mr-2"></i> Complaints by Category
+          </h3>
+          <canvas id="chart-complaint-categories" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Recent Activity Section -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Recent Payments -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-extrabold text-slate-900 text-base">Recent Payments</h3>
+            <a href="maintenance.html" class="text-xs text-cyan-600 font-bold hover:underline">View All</a>
+          </div>
+          <div id="recent-payments-list" class="space-y-1">
+            <div class="text-center py-6 text-slate-400 text-xs">Loading recent payments...</div>
+          </div>
+        </div>
+
+        <!-- Recent Complaints -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-extrabold text-slate-900 text-base">Recent Complaints</h3>
+            <a href="complaints.html" class="text-xs text-cyan-600 font-bold hover:underline">View All</a>
+          </div>
+          <div id="recent-complaints-list" class="space-y-1">
+            <div class="text-center py-6 text-slate-400 text-xs">Loading recent complaints...</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script>
+    lucide.createIcons();
+    const user = auth.checkAuth(['admin']);
+    if (user) {
+      ui.initLayout('admin-dashboard.html');
+      dashboard.init();
+    }
+  </script>
+</body>
+</html>
