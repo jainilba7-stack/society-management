@@ -3,7 +3,7 @@ const getApiBaseUrl = () => {
   if (window.location.port === '5000') {
     return window.location.origin + '/api';
   }
-  return 'http://localhost:5000/api';
+  return 'https://society-management-h7st.onrender.com';
 };
 
 const API_BASE_URL = getApiBaseUrl();
