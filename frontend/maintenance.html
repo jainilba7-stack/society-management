@@ -70,6 +70,11 @@
         <button onclick="document.getElementById('create-bill-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="lucide-x text-lg"></i></button>
       </div>
 
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Target Flat Number (Optional)</label>
+        <input type="text" id="bill-flatnumber" placeholder="e.g. A-101 (Leave empty for all society flats)" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+      </div>
+
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Month</label>
@@ -103,13 +108,18 @@
       </div>
 
       <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Bill Copy / Image Proof (Optional)</label>
+        <input type="file" id="bill-image" accept="image/*,.pdf" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-600 focus:outline-none">
+      </div>
+
+      <div>
         <label class="block text-xs font-bold text-slate-700 mb-1">Description</label>
-        <input type="text" id="bill-desc" value="October 2026 Monthly Maintenance" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+        <input type="text" id="bill-desc" value="Monthly Maintenance Charge" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
       </div>
 
       <div class="flex justify-end space-x-3 pt-2">
         <button onclick="document.getElementById('create-bill-modal').classList.add('hidden')" class="btn-aqua-outline text-xs">Cancel</button>
-        <button onclick="maintenanceModule.createBill()" class="btn-aqua text-xs">Issue Bill to All Flats</button>
+        <button onclick="maintenanceModule.createBill()" class="btn-aqua text-xs">Issue Maintenance Bill</button>
       </div>
     </div>
   </div>

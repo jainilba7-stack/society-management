@@ -11,7 +11,9 @@ const {
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
 
-router.post('/bills', protect, authorize('admin'), createMaintenanceBill);
+const upload = require('../middlewares/uploadMiddleware');
+
+router.post('/bills', protect, authorize('admin'), upload.single('billImage'), createMaintenanceBill);
 router.get('/bills', protect, getBills);
 router.get('/payments', protect, getPayments);
 router.post('/create-order', protect, createRazorpayOrder);

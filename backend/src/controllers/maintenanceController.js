@@ -1,16 +1,37 @@
 const MaintenanceBill = require('../models/MaintenanceBill');
 const Payment = require('../models/Payment');
 const Flat = require('../models/Flat');
+const Block = require('../models/Block');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const ActivityLog = require('../models/ActivityLog');
 const razorpayInstance = require('../config/razorpay');
 const { sendPaymentReceiptEmail } = require('../services/emailService');
-const crypto = require('crypto');
+const { uploadImageToCloudinary } = require('../services/cloudinaryService');
 
 const createMaintenanceBill = async (req, res, next) => {
   try {
-    const { month, year, amount, dueDate, lateFee, description, targetBlockIds } = req.body;
+    const { month, year, amount, dueDate, lateFee, description, targetBlockIds, flatNumber, block } = req.body;
+
+    let billImageUrl = '';
+    if (req.file) {
+      billImageUrl = await uploadImageToCloudinary(req.file.buffer, 'society_bills');
+    }
+
+    let targetFlatObj = null;
+    let targetBlockObj = null;
+
+    if (flatNumber && flatNumber.trim()) {
+      // Find specific flat by flatNumber (e.g. "A-101")
+      targetFlatObj = await Flat.findOne({
+        flatNumber: { $regex: new RegExp(`^${flatNumber.trim()}$`, 'i') },
+      }).populate('block');
+
+      if (!targetFlatObj) {
+        return res.status(404).json({ success: false, message: `Flat '${flatNumber}' not found` });
+      }
+      targetBlockObj = targetFlatObj.block;
+    }
 
     const bill = await MaintenanceBill.create({
       month,
@@ -18,38 +39,44 @@ const createMaintenanceBill = async (req, res, next) => {
       amount: parseFloat(amount),
       dueDate: new Date(dueDate),
       lateFee: lateFee ? parseFloat(lateFee) : 100,
-      description: description || 'Monthly Maintenance Charge',
-      targetBlocks: targetBlockIds || [],
+      description: description || (targetFlatObj ? `Maintenance Bill for Flat ${targetFlatObj.flatNumber}` : 'Monthly Maintenance Charge'),
+      targetBlocks: targetBlockObj ? [targetBlockObj._id] : (targetBlockIds || []),
+      targetFlat: targetFlatObj ? targetFlatObj._id : null,
+      flatNumber: targetFlatObj ? targetFlatObj.flatNumber : '',
+      billImageUrl,
     });
 
-    // Bulk update flat statuses to pending
-    let flatFilter = {};
-    if (targetBlockIds && targetBlockIds.length > 0) {
-      flatFilter.block = { $in: targetBlockIds };
+    // Assign payments
+    let flatsToAssign = [];
+    if (targetFlatObj) {
+      flatsToAssign = [targetFlatObj];
+    } else {
+      let flatFilter = {};
+      if (targetBlockIds && targetBlockIds.length > 0) {
+        flatFilter.block = { $in: targetBlockIds };
+      }
+      flatsToAssign = await Flat.find(flatFilter);
     }
 
-    const flats = await Flat.find(flatFilter);
-    for (let flat of flats) {
+    for (let flat of flatsToAssign) {
       flat.maintenanceStatus = 'pending';
       await flat.save();
 
       if (flat.resident) {
-        // Create pending payment record
         await Payment.create({
           bill: bill._id,
           resident: flat.resident,
           flat: flat._id,
-          block: flat.block,
+          block: flat.block._id || flat.block,
           amount: bill.amount,
           totalPaid: bill.amount,
           status: 'pending',
         });
 
-        // Notify resident
         await Notification.create({
           recipient: flat.resident,
-          title: `🔔 New Maintenance Bill - ${month} ${year}`,
-          message: `Maintenance bill of ₹${bill.amount} for ${month} ${year} has been issued. Due Date: ${new Date(dueDate).toLocaleDateString()}`,
+          title: `🔔 Maintenance Bill Issued - Flat ${flat.flatNumber}`,
+          message: `Maintenance bill of ₹${bill.amount} for ${month} ${year} has been issued to Flat ${flat.flatNumber}. Due Date: ${new Date(dueDate).toLocaleDateString()}`,
           type: 'bill',
         });
       }
@@ -59,10 +86,18 @@ const createMaintenanceBill = async (req, res, next) => {
       action: 'Created Maintenance Bill',
       user: req.user._id,
       userRole: req.user.role,
-      details: `Created maintenance bill for ${month} ${year} (₹${amount})`,
+      details: targetFlatObj
+        ? `Created specific maintenance bill of ₹${amount} for Flat ${targetFlatObj.flatNumber}`
+        : `Created maintenance bill for ${month} ${year} (₹${amount})`,
     });
 
-    res.status(201).json({ success: true, message: 'Maintenance bill created and assigned to flats', bill });
+    res.status(201).json({
+      success: true,
+      message: targetFlatObj
+        ? `Maintenance bill of ₹${amount} issued specifically to Flat ${targetFlatObj.flatNumber}`
+        : 'Maintenance bill created and assigned to flats',
+      bill,
+    });
   } catch (error) {
     next(error);
   }
@@ -70,7 +105,11 @@ const createMaintenanceBill = async (req, res, next) => {
 
 const getBills = async (req, res, next) => {
   try {
-    const bills = await MaintenanceBill.find().populate('targetBlocks', 'name').sort('-createdAt');
+    const bills = await MaintenanceBill.find()
+      .populate('targetBlocks', 'name')
+      .populate('targetFlat', 'flatNumber ownerName')
+      .sort('-createdAt');
+
     res.status(200).json({ success: true, count: bills.length, bills });
   } catch (error) {
     next(error);
@@ -106,7 +145,6 @@ const getPayments = async (req, res, next) => {
   }
 };
 
-// Razorpay Order Creation via official API
 const createRazorpayOrder = async (req, res, next) => {
   try {
     const { paymentId, amount } = req.body;
@@ -117,7 +155,7 @@ const createRazorpayOrder = async (req, res, next) => {
     }
 
     const options = {
-      amount: Math.round(amount * 100), // in paise (e.g. 250000 = ₹2500)
+      amount: Math.round(amount * 100),
       currency: 'INR',
       receipt: `receipt_${paymentId.slice(-8)}_${Date.now()}`,
     };
@@ -137,7 +175,6 @@ const createRazorpayOrder = async (req, res, next) => {
   }
 };
 
-// Verify Payment & Mark Paid
 const processPaymentVerification = async (req, res, next) => {
   try {
     const { paymentId, razorpayOrderId, razorpayPaymentId, razorpaySignature, paymentMethod } = req.body;
@@ -147,7 +184,6 @@ const processPaymentVerification = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Payment record not found' });
     }
 
-    // Optional cryptographic HMAC-SHA256 signature verification
     const secret = process.env.RAZORPAY_KEY_SECRET || 'YwtAP0tLreKJ3t8q2YPV8h2z';
     if (razorpayOrderId && razorpayPaymentId && razorpaySignature) {
       const generatedSignature = crypto
@@ -169,7 +205,6 @@ const processPaymentVerification = async (req, res, next) => {
     payment.receiptUrl = `/api/maintenance/receipt/${payment._id}`;
     await payment.save();
 
-    // Update flat status
     if (payment.flat) {
       const flatId = payment.flat._id ? payment.flat._id : payment.flat;
       const flat = await Flat.findById(flatId);
@@ -181,7 +216,6 @@ const processPaymentVerification = async (req, res, next) => {
 
     const residentId = payment.resident ? (payment.resident._id || payment.resident) : req.user._id;
 
-    // Create Notification
     await Notification.create({
       recipient: residentId,
       title: '✅ Payment Successful',
@@ -189,7 +223,6 @@ const processPaymentVerification = async (req, res, next) => {
       type: 'payment',
     });
 
-    // Log Activity
     await ActivityLog.create({
       action: 'Maintenance Paid',
       user: residentId,
@@ -197,7 +230,6 @@ const processPaymentVerification = async (req, res, next) => {
       details: `${payment.resident ? payment.resident.fullName : 'Resident'} paid ₹${payment.totalPaid} for maintenance`,
     });
 
-    // Send Email Receipt
     if (payment.resident && payment.flat) {
       sendPaymentReceiptEmail(payment.resident, payment, payment.flat);
     }
@@ -212,7 +244,6 @@ const processPaymentVerification = async (req, res, next) => {
   }
 };
 
-// Download / View Receipt Data
 const getReceipt = async (req, res, next) => {
   try {
     const { paymentId } = req.params;

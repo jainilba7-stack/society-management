@@ -15,6 +15,28 @@ const electricityBillSchema = new mongoose.Schema(
       ref: 'Block',
       required: true,
     },
+    flat: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Flat',
+      default: null,
+    },
+    flatNumber: {
+      type: String,
+      required: [true, 'Flat number is required for electricity bill'],
+    },
+    resident: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    unitsConsumed: {
+      type: Number,
+      default: 0,
+    },
+    meterReading: {
+      type: String,
+      default: '',
+    },
     amount: {
       type: Number,
       required: true,
@@ -25,7 +47,11 @@ const electricityBillSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      default: 'Common Area & Block Light Bill',
+      default: 'Flat Electricity & Meter Bill',
+    },
+    billImageUrl: {
+      type: String,
+      default: '',
     },
     status: {
       type: String,

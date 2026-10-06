@@ -168,4 +168,54 @@ const deleteFlat = async (req, res, next) => {
   }
 };
 
-module.exports = { getAllFlats, createFlat, updateFlat, deleteFlat };
+const vacateFlat = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    let flatDoc = null;
+
+    if (user.flat) {
+      flatDoc = await Flat.findById(user.flat);
+    } else if (user.flatNumber) {
+      flatDoc = await Flat.findOne({ flatNumber: user.flatNumber.toUpperCase() });
+    }
+
+    const oldFlatNumber = user.flatNumber || (flatDoc ? flatDoc.flatNumber : '');
+
+    if (flatDoc) {
+      flatDoc.resident = null;
+      flatDoc.ownerName = '';
+      flatDoc.phone = '';
+      flatDoc.email = '';
+      flatDoc.occupancyStatus = 'vacant';
+      await flatDoc.save();
+    }
+
+    user.flat = null;
+    user.flatNumber = '';
+    await user.save();
+
+    await ActivityLog.create({
+      action: 'Vacated / Sold Flat',
+      user: user._id,
+      userRole: user.role,
+      details: `${user.fullName} vacated/sold Flat ${oldFlatNumber || 'N/A'}. Flat is now available for new owner registration.`,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Flat ${oldFlatNumber || ''} has been successfully released and marked as vacant. A new buyer can now register with this flat number.`,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        block: user.block,
+        flatNumber: '',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getAllFlats, createFlat, updateFlat, deleteFlat, vacateFlat };

@@ -10,6 +10,11 @@ const profileModule = {
     document.getElementById('prof-block').innerText = user.blockName || 'N/A';
     document.getElementById('prof-flat').innerText = user.flatNumber || 'N/A';
     document.getElementById('prof-img').src = user.profileImage || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
+
+    const vacateSec = document.getElementById('vacate-flat-section');
+    if (vacateSec && user.role === 'resident' && user.flatNumber) {
+      vacateSec.classList.remove('hidden');
+    }
   },
 
   async updateProfile() {
@@ -42,6 +47,25 @@ const profileModule = {
         document.getElementById('pass-current').value = '';
         document.getElementById('pass-new').value = '';
         document.getElementById('pass-confirm').value = '';
+      }
+    } catch (e) {
+      ui.showToast(e.message, 'error');
+    }
+  },
+
+  async vacateFlat() {
+    const user = api.getUser();
+    const flatNum = user ? user.flatNumber : '';
+    if (!confirm(`Are you sure you have sold or vacated Flat ${flatNum}? Release flat ownership so the new owner can register?`)) {
+      return;
+    }
+
+    try {
+      const res = await api.post('/flats/vacate');
+      if (res.success) {
+        ui.showToast(res.message || 'Flat released successfully!', 'success');
+        api.setUser(res.user);
+        setTimeout(() => window.location.reload(), 1500);
       }
     } catch (e) {
       ui.showToast(e.message, 'error');

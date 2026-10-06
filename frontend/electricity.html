@@ -40,15 +40,17 @@
             <thead>
               <tr class="bg-slate-50/80 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <th class="px-6 py-4">Bill Month</th>
-                <th class="px-6 py-4">Block</th>
+                <th class="px-6 py-4">Flat Number</th>
+                <th class="px-6 py-4">Units / Meter</th>
                 <th class="px-6 py-4">Amount</th>
                 <th class="px-6 py-4">Due Date</th>
+                <th class="px-6 py-4">Meter Proof</th>
                 <th class="px-6 py-4">Status</th>
                 <th class="px-6 py-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody id="electricity-table-body">
-              <tr><td colspan="6" class="p-8 text-center text-slate-400 text-sm">Loading electricity bills...</td></tr>
+              <tr><td colspan="8" class="p-8 text-center text-slate-400 text-sm">Loading electricity bills...</td></tr>
             </tbody>
           </table>
         </div>
@@ -60,8 +62,13 @@
   <div id="create-elec-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
     <div class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md modal-content space-y-4 shadow-2xl">
       <div class="flex justify-between items-center pb-2 border-b border-slate-100">
-        <h3 class="font-extrabold text-slate-900 text-lg">Add Electricity Bill</h3>
+        <h3 class="font-extrabold text-slate-900 text-lg">Add Flat Electricity Bill</h3>
         <button onclick="document.getElementById('create-elec-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="lucide-x text-lg"></i></button>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Target Flat Number *</label>
+        <input type="text" id="elec-flatnumber" required placeholder="e.g. A-101 or C-304" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
       </div>
 
       <div class="grid grid-cols-2 gap-3">
@@ -79,29 +86,41 @@
         </div>
       </div>
 
-      <div>
-        <label class="block text-xs font-bold text-slate-700 mb-1">Block Name / Letter</label>
-        <input type="text" id="create-bill-block" required placeholder="e.g. A or Block A" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Units Consumed (kWh)</label>
+          <input type="number" id="elec-units" placeholder="e.g. 250" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Meter Reading</label>
+          <input type="text" id="elec-reading" placeholder="e.g. 45890 kWh" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Bill Amount (₹) *</label>
+          <input type="number" id="elec-amount" placeholder="e.g. 1850" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Due Date</label>
+          <input type="date" id="elec-duedate" value="2026-10-15" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+        </div>
       </div>
 
       <div>
-        <label class="block text-xs font-bold text-slate-700 mb-1">Bill Amount (₹)</label>
-        <input type="number" id="elec-amount" placeholder="e.g. 5200" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
-      </div>
-
-      <div>
-        <label class="block text-xs font-bold text-slate-700 mb-1">Due Date</label>
-        <input type="date" id="elec-duedate" value="2026-10-15" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+        <label class="block text-xs font-bold text-slate-700 mb-1">Meter Photo / Bill Proof (Optional)</label>
+        <input type="file" id="elec-bill-image" accept="image/*,.pdf" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-600 focus:outline-none">
       </div>
 
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-1">Description</label>
-        <input type="text" id="elec-desc" value="Common area lighting & lift bill" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
+        <input type="text" id="elec-desc" value="Monthly Electricity Bill" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none">
       </div>
 
       <div class="flex justify-end space-x-3 pt-2">
         <button onclick="document.getElementById('create-elec-modal').classList.add('hidden')" class="btn-aqua-outline text-xs">Cancel</button>
-        <button onclick="electricityModule.createBill()" class="btn-aqua text-xs">Save Electricity Bill</button>
+        <button onclick="electricityModule.createBill()" class="btn-aqua text-xs">Send Electricity Bill</button>
       </div>
     </div>
   </div>

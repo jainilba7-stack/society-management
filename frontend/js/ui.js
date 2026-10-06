@@ -273,4 +273,38 @@ const ui = {
       this.showToast(e.message, 'error');
     }
   },
+
+  showImageModal(imageUrl, title = 'Bill Proof Image') {
+    if (!imageUrl) return;
+    let modal = document.getElementById('global-image-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'global-image-modal';
+      modal.className = 'fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4';
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 w-full max-w-2xl modal-content space-y-4 shadow-2xl relative">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+            <h3 id="global-image-modal-title" class="font-extrabold text-slate-900 text-lg">Bill Proof</h3>
+            <button onclick="document.getElementById('global-image-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1">
+              <i class="lucide-x text-xl"></i>
+            </button>
+          </div>
+          <div class="flex justify-center items-center bg-slate-900/5 rounded-2xl p-2 min-h-[300px]">
+            <img id="global-image-modal-img" src="" alt="Proof Image" class="max-h-[70vh] w-auto object-contain rounded-xl shadow-sm">
+          </div>
+          <div class="flex justify-end pt-2">
+            <a id="global-image-modal-download" href="" target="_blank" class="btn-aqua text-xs py-2 px-4 flex items-center">
+              <i class="lucide-external-link text-sm mr-1.5"></i> Open Full Image
+            </a>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    document.getElementById('global-image-modal-title').innerText = title;
+    document.getElementById('global-image-modal-img').src = imageUrl;
+    document.getElementById('global-image-modal-download').href = imageUrl;
+    modal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
 };

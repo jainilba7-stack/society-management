@@ -8,7 +8,9 @@ const {
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
 
-router.post('/', protect, authorize('admin', 'secretary'), createElectricityBill);
+const upload = require('../middlewares/uploadMiddleware');
+
+router.post('/', protect, authorize('admin', 'secretary'), upload.single('billImage'), createElectricityBill);
 router.get('/', protect, getElectricityBills);
 router.put('/:id/status', protect, authorize('admin', 'secretary'), updateElectricityBillStatus);
 

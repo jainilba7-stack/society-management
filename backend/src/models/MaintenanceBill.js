@@ -32,6 +32,19 @@ const maintenanceBillSchema = new mongoose.Schema(
         ref: 'Block',
       },
     ],
+    targetFlat: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Flat',
+      default: null,
+    },
+    flatNumber: {
+      type: String,
+      default: '',
+    },
+    billImageUrl: {
+      type: String,
+      default: '',
+    },
     status: {
       type: String,
       enum: ['active', 'archived'],

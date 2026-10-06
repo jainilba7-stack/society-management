@@ -24,13 +24,23 @@ const maintenanceModule = {
               <i class="lucide-calendar"></i>
             </div>
             <div>
-              <h4 class="font-extrabold text-slate-900 text-base">${b.month} ${b.year} Maintenance</h4>
-              <p class="text-xs text-slate-500">${b.description} | Due Date: <span class="font-semibold text-slate-700">${ui.formatDate(b.dueDate)}</span></p>
+              <div class="flex items-center space-x-2">
+                <h4 class="font-extrabold text-slate-900 text-base">${b.month} ${b.year} Maintenance</h4>
+                ${b.flatNumber ? `<span class="bg-cyan-100 text-cyan-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Flat ${b.flatNumber}</span>` : `<span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">All Flats</span>`}
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">${b.description} | Due Date: <span class="font-semibold text-slate-700">${ui.formatDate(b.dueDate)}</span></p>
             </div>
           </div>
-          <div class="text-right">
-            <p class="font-extrabold text-slate-900 text-lg">${ui.formatCurrency(b.amount)}</p>
-            <p class="text-[11px] text-amber-600 font-medium">Late fee: ₹${b.lateFee}</p>
+          <div class="flex items-center space-x-3">
+            ${b.billImageUrl ? `
+              <button onclick="ui.showImageModal('${b.billImageUrl}', '${b.month} ${b.year} Bill Proof')" class="btn-aqua-outline text-xs py-1.5 px-3 flex items-center">
+                <i class="lucide-image text-sm mr-1"></i> View Proof
+              </button>
+            ` : ''}
+            <div class="text-right">
+              <p class="font-extrabold text-slate-900 text-lg">${ui.formatCurrency(b.amount)}</p>
+              <p class="text-[11px] text-amber-600 font-medium">Late fee: ₹${b.lateFee}</p>
+            </div>
           </div>
         </div>
       `).join('');
@@ -54,9 +64,16 @@ const maintenanceModule = {
 
       tableBody.innerHTML = data.payments.map(p => `
         <tr class="border-b border-slate-100 table-row-hover text-sm">
-          <td class="px-6 py-4 font-bold text-slate-900">${p.bill ? `${p.bill.month} ${p.bill.year}` : 'Maintenance'}</td>
+          <td class="px-6 py-4 font-bold text-slate-900">
+            ${p.bill ? `${p.bill.month} ${p.bill.year}` : 'Maintenance'}
+            ${p.bill && p.bill.billImageUrl ? `
+              <button onclick="ui.showImageModal('${p.bill.billImageUrl}', 'Maintenance Bill Proof')" class="ml-2 text-cyan-600 hover:text-cyan-800 text-xs inline-flex items-center">
+                <i class="lucide-image text-xs mr-0.5"></i> Proof
+              </button>
+            ` : ''}
+          </td>
           <td class="px-6 py-4 font-semibold text-slate-800">${p.resident ? p.resident.fullName : 'Resident'}</td>
-          <td class="px-6 py-4 font-bold text-slate-900">${p.block ? p.block.name : ''} - ${p.flat ? p.flat.flatNumber : ''}</td>
+          <td class="px-6 py-4 font-bold text-slate-900">${p.block ? p.block.name : ''} - ${p.flat ? p.flat.flatNumber : (p.flatNumber || '')}</td>
           <td class="px-6 py-4 font-extrabold text-slate-900">${ui.formatCurrency(p.totalPaid)}</td>
           <td class="px-6 py-4">${ui.getStatusBadge(p.status)}</td>
           <td class="px-6 py-4 text-xs text-slate-500 font-mono">${p.transactionId || 'Pending'}</td>
@@ -77,20 +94,36 @@ const maintenanceModule = {
   },
 
   async createBill() {
+    const flatNumber = document.getElementById('bill-flatnumber')?.value || '';
     const month = document.getElementById('bill-month').value;
     const year = document.getElementById('bill-year').value;
     const amount = document.getElementById('bill-amount').value;
     const dueDate = document.getElementById('bill-duedate').value;
     const lateFee = document.getElementById('bill-latefee').value;
     const description = document.getElementById('bill-desc').value;
+    const fileInput = document.getElementById('bill-image');
 
     if (!month || !amount || !dueDate) return ui.showToast('Please fill all required bill fields', 'error');
 
     try {
-      const res = await api.post('/maintenance/bills', { month, year, amount, dueDate, lateFee, description });
+      const formData = new FormData();
+      formData.append('month', month);
+      formData.append('year', year);
+      formData.append('amount', amount);
+      formData.append('dueDate', dueDate);
+      formData.append('lateFee', lateFee);
+      formData.append('description', description);
+      if (flatNumber.trim()) formData.append('flatNumber', flatNumber.trim());
+      if (fileInput && fileInput.files[0]) {
+        formData.append('billImage', fileInput.files[0]);
+      }
+
+      const res = await api.post('/maintenance/bills', formData, true);
       if (res.success) {
-        ui.showToast('Maintenance bill issued to all residents!', 'success');
+        ui.showToast(res.message || 'Maintenance bill issued successfully!', 'success');
         document.getElementById('create-bill-modal').classList.add('hidden');
+        if (document.getElementById('bill-flatnumber')) document.getElementById('bill-flatnumber').value = '';
+        if (fileInput) fileInput.value = '';
         await this.init();
       }
     } catch (e) {

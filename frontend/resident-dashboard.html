@@ -34,30 +34,64 @@
         </div>
       </div>
 
-      <!-- Current Maintenance Bill Card (Section 15) -->
-      <div id="res-bill-card" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="font-extrabold text-slate-900 text-lg">Current Maintenance Bill</h3>
-          <span id="res-bill-status"></span>
+      <!-- Current Bills Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Current Maintenance Bill Card -->
+        <div id="res-bill-card" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-extrabold text-slate-900 text-lg">Maintenance Bill</h3>
+            <span id="res-bill-status"></span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl">
+            <div>
+              <p class="text-[11px] font-semibold text-slate-400">Month</p>
+              <p id="res-bill-month" class="text-sm font-bold text-slate-800">No Active Bill</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-semibold text-slate-400">Amount Due</p>
+              <p id="res-bill-amount" class="text-base font-extrabold text-slate-900">₹0</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-semibold text-slate-400">Due Date</p>
+              <p id="res-bill-duedate" class="text-xs font-bold text-slate-800">-</p>
+            </div>
+          </div>
+
+          <div id="res-bill-action" class="pt-2 flex justify-between items-center">
+            <div id="res-bill-proof-wrapper"></div>
+            <div id="res-bill-btn-wrapper"></div>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-5 rounded-2xl">
-          <div>
-            <p class="text-xs font-semibold text-slate-400">Bill Month</p>
-            <p id="res-bill-month" class="text-lg font-bold text-slate-800">October 2026</p>
+        <!-- Electricity Bill Card -->
+        <div id="res-elec-card" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-extrabold text-slate-900 text-lg">Flat Electricity Bill</h3>
+            <span id="res-elec-status"></span>
           </div>
-          <div>
-            <p class="text-xs font-semibold text-slate-400">Amount Due</p>
-            <p id="res-bill-amount" class="text-xl font-extrabold text-slate-900">₹2,500</p>
-          </div>
-          <div>
-            <p class="text-xs font-semibold text-slate-400">Due Date</p>
-            <p id="res-bill-duedate" class="text-sm font-bold text-slate-800">10 Oct 2026</p>
-          </div>
-        </div>
 
-        <div id="res-bill-action" class="pt-2 flex justify-end">
-          <!-- Dynamically populated [ Pay Now ] or Download Receipt -->
+          <div class="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl">
+            <div>
+              <p class="text-[11px] font-semibold text-slate-400">Month</p>
+              <p id="res-elec-month" class="text-sm font-bold text-slate-800">No Bill Issued</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-semibold text-slate-400">Units & Meter</p>
+              <p id="res-elec-units" class="text-xs font-bold text-slate-800">0 kWh</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-semibold text-slate-400">Amount</p>
+              <p id="res-elec-amount" class="text-base font-extrabold text-slate-900">₹0</p>
+            </div>
+          </div>
+
+          <div id="res-elec-action" class="pt-2 flex justify-between items-center">
+            <div id="res-elec-proof-wrapper"></div>
+            <a href="electricity.html" class="btn-aqua-outline text-xs px-4 py-2 flex items-center">
+              <i class="lucide-zap text-xs mr-1"></i> Electricity History
+            </a>
+          </div>
         </div>
       </div>
 
@@ -103,26 +137,54 @@
 
     async function loadResidentData() {
       try {
-        // Load Payments
+        // Load Maintenance Payments
         const pData = await api.get('/maintenance/payments');
         if (pData.success && pData.payments.length > 0) {
           const currentP = pData.payments[0];
-          document.getElementById('res-bill-month').innerText = currentP.bill ? `${currentP.bill.month} ${currentP.bill.year}` : 'October 2026';
+          document.getElementById('res-bill-month').innerText = currentP.bill ? `${currentP.bill.month} ${currentP.bill.year}` : 'Active Maintenance';
           document.getElementById('res-bill-amount').innerText = ui.formatCurrency(currentP.totalPaid);
-          document.getElementById('res-bill-duedate').innerText = currentP.bill ? ui.formatDate(currentP.bill.dueDate) : '10 Oct 2026';
+          document.getElementById('res-bill-duedate').innerText = currentP.bill ? ui.formatDate(currentP.bill.dueDate) : '-';
           document.getElementById('res-bill-status').innerHTML = ui.getStatusBadge(currentP.status);
 
-          const actionDiv = document.getElementById('res-bill-action');
+          const proofDiv = document.getElementById('res-bill-proof-wrapper');
+          if (currentP.bill && currentP.bill.billImageUrl) {
+            proofDiv.innerHTML = `
+              <button onclick="ui.showImageModal('${currentP.bill.billImageUrl}', 'Maintenance Bill Proof')" class="btn-aqua-outline text-xs px-3 py-1.5 flex items-center">
+                <i class="lucide-image text-xs mr-1"></i> Bill Proof Photo
+              </button>
+            `;
+          }
+
+          const btnDiv = document.getElementById('res-bill-btn-wrapper');
           if (currentP.status === 'pending') {
-            actionDiv.innerHTML = `
-              <button onclick="maintenanceModule.payOnline('${currentP._id}', ${currentP.totalPaid})" class="btn-aqua text-sm px-6 py-2.5 flex items-center">
-                <i class="lucide-credit-card text-base mr-2"></i> Pay Now Online
+            btnDiv.innerHTML = `
+              <button onclick="maintenanceModule.payOnline('${currentP._id}', ${currentP.totalPaid})" class="btn-aqua text-xs px-4 py-2 flex items-center">
+                <i class="lucide-credit-card text-xs mr-1.5"></i> Pay Now Online
               </button>
             `;
           } else {
-            actionDiv.innerHTML = `
-              <button onclick="maintenanceModule.downloadReceipt('${currentP._id}')" class="btn-aqua-outline text-sm px-6 py-2.5 flex items-center">
-                <i class="lucide-download text-base mr-2"></i> Download Paid Receipt
+            btnDiv.innerHTML = `
+              <button onclick="maintenanceModule.downloadReceipt('${currentP._id}')" class="btn-aqua-outline text-xs px-4 py-2 flex items-center">
+                <i class="lucide-download text-xs mr-1.5"></i> Receipt
+              </button>
+            `;
+          }
+        }
+
+        // Load Electricity Bills for Resident Flat
+        const eData = await api.get('/electricity');
+        if (eData.success && eData.bills.length > 0) {
+          const latestElec = eData.bills[0];
+          document.getElementById('res-elec-month').innerText = `${latestElec.month} ${latestElec.year}`;
+          document.getElementById('res-elec-units').innerHTML = `${latestElec.unitsConsumed || 0} kWh <span class="block text-[10px] text-slate-400 font-normal">${latestElec.meterReading ? `Reading: ${latestElec.meterReading}` : ''}</span>`;
+          document.getElementById('res-elec-amount').innerText = ui.formatCurrency(latestElec.amount);
+          document.getElementById('res-elec-status').innerHTML = ui.getStatusBadge(latestElec.status);
+
+          const elecProofDiv = document.getElementById('res-elec-proof-wrapper');
+          if (latestElec.billImageUrl) {
+            elecProofDiv.innerHTML = `
+              <button onclick="ui.showImageModal('${latestElec.billImageUrl}', 'Flat Electricity Meter Photo')" class="btn-aqua-outline text-xs px-3 py-1.5 flex items-center">
+                <i class="lucide-image text-xs mr-1"></i> Meter Photo
               </button>
             `;
           }

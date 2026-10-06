@@ -6,6 +6,7 @@ const flatSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Flat number is required'],
       trim: true,
+
     },
     block: {
       type: mongoose.Schema.Types.ObjectId,

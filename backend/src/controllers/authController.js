@@ -61,8 +61,37 @@ const register = async (req, res, next) => {
       }
     }
 
-    if (assignedBlock && flatNumber) {
-      assignedFlat = await Flat.findOne({ block: assignedBlock._id, flatNumber: { $regex: new RegExp(`^${flatNumber.trim()}$`, 'i') } });
+    if (flatNumber && flatNumber.trim()) {
+      const cleanFlatStr = flatNumber.trim().toUpperCase();
+
+      // Check if another resident user already owns this flat
+      const existingResidentUser = await User.findOne({
+        flatNumber: cleanFlatStr,
+        role: 'resident',
+      });
+
+      // Check if Flat document is already assigned to a resident
+      const existingFlatDoc = await Flat.findOne({
+        flatNumber: cleanFlatStr,
+        resident: { $ne: null },
+      }).populate('resident');
+
+      if (existingResidentUser || (existingFlatDoc && existingFlatDoc.resident)) {
+        const ownerName = existingResidentUser ? existingResidentUser.fullName : (existingFlatDoc && existingFlatDoc.resident ? existingFlatDoc.resident.fullName : 'an existing resident');
+        return res.status(400).json({
+          success: false,
+          message: `Flat '${cleanFlatStr}' is already registered to ${ownerName}. A flat can only have one active registered owner. If you are the new owner, please request the previous owner or Admin to vacate/transfer the flat.`,
+        });
+      }
+
+      if (assignedBlock) {
+        assignedFlat = await Flat.findOne({ block: assignedBlock._id, flatNumber: cleanFlatStr });
+      } else {
+        assignedFlat = await Flat.findOne({ flatNumber: cleanFlatStr }).populate('block');
+        if (assignedFlat && assignedFlat.block) {
+          assignedBlock = assignedFlat.block;
+        }
+      }
     }
 
     const user = await User.create({
