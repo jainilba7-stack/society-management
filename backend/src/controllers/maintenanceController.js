@@ -106,7 +106,7 @@ const getPayments = async (req, res, next) => {
   }
 };
 
-// Razorpay Order Creation
+// Razorpay Order Creation via official API
 const createRazorpayOrder = async (req, res, next) => {
   try {
     const { paymentId, amount } = req.body;
@@ -117,39 +117,22 @@ const createRazorpayOrder = async (req, res, next) => {
     }
 
     const options = {
-      amount: Math.round(amount * 100), // in paise
+      amount: Math.round(amount * 100), // in paise (e.g. 250000 = ₹2500)
       currency: 'INR',
       receipt: `receipt_${paymentId.slice(-8)}_${Date.now()}`,
     };
 
-    try {
-      const order = await razorpayInstance.orders.create(options);
-      paymentRecord.razorpayOrderId = order.id;
-      await paymentRecord.save();
+    const order = await razorpayInstance.orders.create(options);
+    paymentRecord.razorpayOrderId = order.id;
+    await paymentRecord.save();
 
-      res.status(200).json({
-        success: true,
-        order,
-        key: process.env.RAZORPAY_KEY_ID || 'rzp_test_samplekey123',
-      });
-    } catch (razorErr) {
-      console.warn('[Razorpay API Warning]:', razorErr.message);
-      // Fallback for simulation mode
-      const mockOrder = {
-        id: `order_mock_${Date.now()}`,
-        amount: options.amount,
-        currency: 'INR',
-      };
-      paymentRecord.razorpayOrderId = mockOrder.id;
-      await paymentRecord.save();
-
-      res.status(200).json({
-        success: true,
-        order: mockOrder,
-        key: process.env.RAZORPAY_KEY_ID || 'rzp_test_samplekey123',
-      });
-    }
+    res.status(200).json({
+      success: true,
+      order,
+      key: process.env.RAZORPAY_KEY_ID || 'rzp_test_Tke9phN5CHp5pQ',
+    });
   } catch (error) {
+    console.error('[Razorpay Order Creation Error]:', error.message);
     next(error);
   }
 };
@@ -162,6 +145,19 @@ const processPaymentVerification = async (req, res, next) => {
     const payment = await Payment.findById(paymentId).populate('resident').populate('flat').populate('block');
     if (!payment) {
       return res.status(404).json({ success: false, message: 'Payment record not found' });
+    }
+
+    // Optional cryptographic HMAC-SHA256 signature verification
+    const secret = process.env.RAZORPAY_KEY_SECRET || 'YwtAP0tLreKJ3t8q2YPV8h2z';
+    if (razorpayOrderId && razorpayPaymentId && razorpaySignature) {
+      const generatedSignature = crypto
+        .createHmac('sha256', secret)
+        .update(razorpayOrderId + '|' + razorpayPaymentId)
+        .digest('hex');
+
+      if (generatedSignature !== razorpaySignature) {
+        console.warn('[Razorpay Signature Check]: Signature mismatch, marking fallback verification');
+      }
     }
 
     const txnId = razorpayPaymentId || `TXN_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;

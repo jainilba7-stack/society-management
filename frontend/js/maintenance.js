@@ -99,17 +99,17 @@ const maintenanceModule = {
   },
 
   async payOnline(paymentId, amount) {
-    ui.showToast('Initiating Razorpay payment gateway...', 'info');
+    ui.showToast('Opening Razorpay Payment Portal (GPay, Cards, UPI, Netbanking)...', 'info');
 
     try {
-      // 1. Create order
+      // 1. Create official Razorpay Order
       const orderRes = await api.post('/maintenance/create-order', { paymentId, amount });
       if (!orderRes.success) return;
 
       const user = api.getUser();
 
-      // Check if Razorpay SDK script is present
-      if (typeof Razorpay !== 'undefined' && orderRes.key && !orderRes.order.id.startsWith('order_mock')) {
+      // Launch Razorpay Checkout Popup
+      if (typeof Razorpay !== 'undefined') {
         const options = {
           key: orderRes.key,
           amount: orderRes.order.amount,
@@ -118,28 +118,24 @@ const maintenanceModule = {
           description: 'Monthly Maintenance Payment',
           order_id: orderRes.order.id,
           prefill: {
-            name: user.fullName,
-            email: user.email,
-            contact: user.phone || '9876543210',
+            name: user ? user.fullName : '',
+            email: user ? user.email : '',
+            contact: user && user.phone ? user.phone : '9876543210',
           },
           theme: { color: '#00b4d8' },
           handler: async (response) => {
             await maintenanceModule.verifyPayment(paymentId, response);
           },
+          modal: {
+            ondismiss: function () {
+              ui.showToast('Payment window closed', 'warning');
+            },
+          },
         };
         const rzp = new Razorpay(options);
         rzp.open();
       } else {
-        // Razorpay Simulation modal fallback for instant demo testing
-        setTimeout(async () => {
-          if (confirm(`[Razorpay Checkout Portal]\n\nPay ₹${amount} for Maintenance via UPI/Card?\n\nClick OK to simulate successful payment verification.`)) {
-            await maintenanceModule.verifyPayment(paymentId, {
-              razorpay_order_id: orderRes.order.id,
-              razorpay_payment_id: `pay_sim_${Date.now()}`,
-              razorpay_signature: 'simulated_sig_123',
-            });
-          }
-        }, 500);
+        ui.showToast('Razorpay Checkout SDK not loaded in browser', 'error');
       }
     } catch (e) {
       ui.showToast(e.message, 'error');
