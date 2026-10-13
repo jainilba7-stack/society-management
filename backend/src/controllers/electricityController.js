@@ -28,19 +28,31 @@ const resolveBlock = async (input) => {
 const createElectricityBill = async (req, res, next) => {
   try {
     const { month, year, blockId, block, flatNumber, unitsConsumed, meterReading, amount, dueDate, description } = req.body;
-    const inputBlock = blockId || block;
+    const inputBlock = blockId || block || (req.user.block ? req.user.block.toString() : '');
 
-    if (!flatNumber || !flatNumber.trim()) {
-      return res.status(400).json({ success: false, message: 'Please specify the Flat Number (e.g. A-101)' });
+    let flatDoc = null;
+    let resolvedBlockDoc = null;
+
+    if (flatNumber && flatNumber.trim()) {
+      flatDoc = await Flat.findOne({
+        flatNumber: { $regex: new RegExp(`^${flatNumber.trim()}$`, 'i') },
+      }).populate('block').populate('resident');
+
+      if (!flatDoc) {
+        return res.status(404).json({ success: false, message: `Flat '${flatNumber}' not found in society` });
+      }
+      resolvedBlockDoc = flatDoc.block;
+    } else if (inputBlock) {
+      resolvedBlockDoc = await resolveBlock(inputBlock);
+      if (!resolvedBlockDoc && req.user.block) {
+        resolvedBlockDoc = await Block.findById(req.user.block);
+      }
+    } else if (req.user.role === 'secretary' && req.user.block) {
+      resolvedBlockDoc = await Block.findById(req.user.block);
     }
 
-    // Find Flat
-    const flatDoc = await Flat.findOne({
-      flatNumber: { $regex: new RegExp(`^${flatNumber.trim()}$`, 'i') },
-    }).populate('block').populate('resident');
-
-    if (!flatDoc) {
-      return res.status(404).json({ success: false, message: `Flat '${flatNumber}' not found in society` });
+    if (!resolvedBlockDoc) {
+      return res.status(400).json({ success: false, message: 'Please specify Flat Number (e.g. A-101) or Block' });
     }
 
     let billImageUrl = '';
@@ -51,19 +63,19 @@ const createElectricityBill = async (req, res, next) => {
     const bill = await ElectricityBill.create({
       month,
       year: parseInt(year),
-      block: flatDoc.block._id,
-      flat: flatDoc._id,
-      flatNumber: flatDoc.flatNumber,
-      resident: flatDoc.resident ? flatDoc.resident._id : null,
+      block: resolvedBlockDoc._id,
+      flat: flatDoc ? flatDoc._id : null,
+      flatNumber: flatDoc ? flatDoc.flatNumber : '',
+      resident: flatDoc && flatDoc.resident ? flatDoc.resident._id : null,
       unitsConsumed: unitsConsumed ? parseFloat(unitsConsumed) : 0,
       meterReading: meterReading || '',
       amount: parseFloat(amount),
       dueDate: new Date(dueDate),
-      description: description || `Electricity bill for Flat ${flatDoc.flatNumber}`,
+      description: description || (flatDoc ? `Electricity bill for Flat ${flatDoc.flatNumber}` : `Common area electricity bill for ${resolvedBlockDoc.name}`),
       billImageUrl,
     });
 
-    if (flatDoc.resident) {
+    if (flatDoc && flatDoc.resident) {
       await Notification.create({
         recipient: flatDoc.resident._id,
         title: `⚡ Electricity Bill Issued for Flat ${flatDoc.flatNumber}`,
@@ -73,15 +85,19 @@ const createElectricityBill = async (req, res, next) => {
     }
 
     await ActivityLog.create({
-      action: 'Added Flat Electricity Bill',
+      action: 'Added Electricity Bill',
       user: req.user._id,
       userRole: req.user.role,
-      details: `Issued electricity bill of ₹${amount} to Flat ${flatDoc.flatNumber} (${month} ${year})`,
+      details: flatDoc
+        ? `Issued electricity bill of ₹${amount} to Flat ${flatDoc.flatNumber} (${month} ${year})`
+        : `Issued common area electricity bill of ₹${amount} to ${resolvedBlockDoc.name} (${month} ${year})`,
     });
 
     res.status(201).json({
       success: true,
-      message: `Electricity bill of ₹${amount} issued to Flat ${flatDoc.flatNumber}`,
+      message: flatDoc
+        ? `Electricity bill of ₹${amount} issued to Flat ${flatDoc.flatNumber}`
+        : `Common electricity bill of ₹${amount} issued to ${resolvedBlockDoc.name}`,
       bill,
     });
   } catch (error) {
@@ -133,23 +149,26 @@ const updateElectricityBillStatus = async (req, res, next) => {
     }
 
     // Scope check for block secretary
-    if (req.user.role === 'secretary' && req.user.block && req.user.block.toString() !== bill.block._id.toString()) {
+    if (req.user.role === 'secretary' && req.user.block && bill.block && req.user.block.toString() !== bill.block._id.toString()) {
       return res.status(403).json({ success: false, message: 'Access denied: Cannot edit another block electricity bill' });
     }
 
-    bill.status = status;
-    await bill.save();
+    const updatedBill = await ElectricityBill.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: false }
+    ).populate('block').populate('resident');
 
     if (bill.resident) {
       await Notification.create({
-        recipient: bill.resident._id,
+        recipient: bill.resident._id || bill.resident,
         title: `⚡ Electricity Bill Status Updated`,
-        message: `Your electricity bill of ₹${bill.amount} for Flat ${bill.flatNumber} has been marked as ${status.toUpperCase()}`,
+        message: `Your electricity bill of ₹${bill.amount} ${bill.flatNumber ? `for Flat ${bill.flatNumber}` : ''} has been marked as ${status.toUpperCase()}`,
         type: 'bill',
       });
     }
 
-    res.status(200).json({ success: true, message: `Electricity bill status updated to ${status}`, bill });
+    res.status(200).json({ success: true, message: `Electricity bill status updated to ${status}`, bill: updatedBill });
   } catch (error) {
     next(error);
   }

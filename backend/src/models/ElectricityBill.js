@@ -22,7 +22,7 @@ const electricityBillSchema = new mongoose.Schema(
     },
     flatNumber: {
       type: String,
-      required: [true, 'Flat number is required for electricity bill'],
+      default: '',
     },
     resident: {
       type: mongoose.Schema.Types.ObjectId,

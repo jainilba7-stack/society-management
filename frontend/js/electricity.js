@@ -24,16 +24,18 @@ const electricityModule = {
       tableBody.innerHTML = data.bills.map(b => `
         <tr class="border-b border-slate-100 table-row-hover text-sm">
           <td class="px-6 py-4 font-bold text-slate-900">${b.month} ${b.year}</td>
-          <td class="px-6 py-4 font-extrabold text-cyan-700">Flat ${b.flatNumber || (b.flat ? b.flat.flatNumber : 'N/A')}</td>
+          <td class="px-6 py-4 font-extrabold text-cyan-700">
+            ${b.flatNumber ? `Flat ${b.flatNumber}` : (b.flat && b.flat.flatNumber ? `Flat ${b.flat.flatNumber}` : `<span class="text-slate-600 font-semibold">${b.block ? b.block.name : 'All Blocks'} (Common Area)</span>`)}
+          </td>
           <td class="px-6 py-4 text-xs font-medium text-slate-700">
-            <div><span class="font-bold text-slate-900">${b.unitsConsumed || 0}</span> kWh</div>
-            <div class="text-[11px] text-slate-400">${b.meterReading ? `Reading: ${b.meterReading}` : ''}</div>
+            ${b.unitsConsumed ? `<div><span class="font-bold text-slate-900">${b.unitsConsumed}</span> kWh</div>` : '<span class="text-slate-400">Common Meter</span>'}
+            ${b.meterReading ? `<div class="text-[11px] text-slate-400">Reading: ${b.meterReading}</div>` : ''}
           </td>
           <td class="px-6 py-4 font-extrabold text-slate-900">${ui.formatCurrency(b.amount)}</td>
           <td class="px-6 py-4 text-slate-600">${ui.formatDate(b.dueDate)}</td>
           <td class="px-6 py-4">
             ${b.billImageUrl ? `
-              <button onclick="ui.showImageModal('${b.billImageUrl}', 'Flat ${b.flatNumber} Meter Proof')" class="btn-aqua-outline text-xs py-1 px-2.5 flex items-center">
+              <button onclick="ui.showImageModal('${b.billImageUrl}', '${b.flatNumber ? `Flat ${b.flatNumber}` : 'Electricity'} Meter Proof')" class="btn-aqua-outline text-xs py-1 px-2.5 flex items-center">
                 <i class="lucide-image text-xs mr-1"></i> View Photo
               </button>
             ` : '<span class="text-slate-400 text-xs font-normal">No photo</span>'}
@@ -54,7 +56,9 @@ const electricityModule = {
   },
 
   async createBill() {
+    const user = api.getUser();
     const flatNumber = document.getElementById('elec-flatnumber')?.value || '';
+    const blockInput = document.getElementById('elec-block')?.value || '';
     const month = document.getElementById('elec-month').value;
     const year = document.getElementById('elec-year').value;
     const unitsConsumed = document.getElementById('elec-units')?.value || '0';
@@ -64,11 +68,15 @@ const electricityModule = {
     const description = document.getElementById('elec-desc').value;
     const fileInput = document.getElementById('elec-bill-image');
 
-    if (!flatNumber.trim() || !amount || !dueDate) return ui.showToast('Please specify Flat Number, Amount and Due Date', 'error');
+    if (!amount || !dueDate) return ui.showToast('Please specify Amount and Due Date', 'error');
+    if (!flatNumber.trim() && !blockInput.trim() && (!user || user.role !== 'secretary')) {
+      return ui.showToast('Please specify Target Flat Number (e.g. A-101) or Block (e.g. Block A)', 'error');
+    }
 
     try {
       const formData = new FormData();
-      formData.append('flatNumber', flatNumber.trim());
+      if (flatNumber.trim()) formData.append('flatNumber', flatNumber.trim());
+      if (blockInput.trim()) formData.append('block', blockInput.trim());
       formData.append('month', month);
       formData.append('year', year);
       formData.append('unitsConsumed', unitsConsumed);
@@ -82,9 +90,10 @@ const electricityModule = {
 
       const res = await api.post('/electricity', formData, true);
       if (res.success) {
-        ui.showToast(res.message || 'Electricity bill issued to flat successfully!', 'success');
+        ui.showToast(res.message || 'Electricity bill recorded successfully!', 'success');
         document.getElementById('create-elec-modal').classList.add('hidden');
         if (document.getElementById('elec-flatnumber')) document.getElementById('elec-flatnumber').value = '';
+        if (document.getElementById('elec-block')) document.getElementById('elec-block').value = '';
         if (document.getElementById('elec-amount')) document.getElementById('elec-amount').value = '';
         if (document.getElementById('elec-units')) document.getElementById('elec-units').value = '';
         if (document.getElementById('elec-reading')) document.getElementById('elec-reading').value = '';
