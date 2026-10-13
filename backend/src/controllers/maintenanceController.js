@@ -167,7 +167,7 @@ const createRazorpayOrder = async (req, res, next) => {
     res.status(200).json({
       success: true,
       order,
-      key: process.env.RAZORPAY_KEY_ID || 'rzp_test_Tke9phN5CHp5pQ',
+      key: razorpayInstance.getKeyId ? razorpayInstance.getKeyId() : (process.env.RAZORPAY_KEY_ID || 'rzp_test_Tke9phN5CHp5pQ'),
     });
   } catch (error) {
     console.error('[Razorpay Order Creation Error]:', error.message);
@@ -184,7 +184,7 @@ const processPaymentVerification = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Payment record not found' });
     }
 
-    const secret = process.env.RAZORPAY_KEY_SECRET || 'YwtAP0tLreKJ3t8q2YPV8h2z';
+    const secret = razorpayInstance.getKeySecret ? razorpayInstance.getKeySecret() : (process.env.RAZORPAY_KEY_SECRET || 'YwtAP0tLreKJ3t8q2YPV8h2z');
     if (razorpayOrderId && razorpayPaymentId && razorpaySignature) {
       const generatedSignature = crypto
         .createHmac('sha256', secret)

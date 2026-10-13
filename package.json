@@ -1,0 +1,9 @@
+{
+  "name": "society-management-app",
+  "version": "1.0.0",
+  "description": "Society Management System App",
+  "scripts": {
+    "build": "cd backend && npm install",
+    "start": "cd backend && node server.js"
+  }
+}
